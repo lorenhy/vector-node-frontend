@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
 export default function LoginPage() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -24,7 +26,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -33,6 +35,16 @@ export default function LoginPage() {
           password: formData.password,
         }),
       })
+
+      // Check content type BEFORE parsing
+      const contentType = response.headers.get('content-type')
+
+      if (!contentType || !contentType.includes('application/json')) {
+        // Server returned HTML (error page, 404, CORS block)
+        const text = await response.text()
+        console.error('Server returned non-JSON:', text.substring(0, 200))
+        throw new Error('Server error. Please try again later.')
+      }
 
       const data = await response.json()
 
@@ -54,7 +66,12 @@ export default function LoginPage() {
       }
 
     } catch (err: any) {
-      setError(err.message || 'Login failed')
+      // Handle network errors
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError('Cannot connect to server. Please check your connection.')
+      } else {
+        setError(err.message || 'Login failed')
+      }
     } finally {
       setLoading(false)
     }
