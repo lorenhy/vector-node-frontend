@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://vector-node-backend.onrender.com/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -22,10 +22,13 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('[LOGIN] handleSubmit triggered')
+    console.log('[LOGIN] API_URL:', API_URL)
     setError('')
     setLoading(true)
 
     try {
+      console.log('[LOGIN] Sending POST to:', `${API_URL}/auth/login`)
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

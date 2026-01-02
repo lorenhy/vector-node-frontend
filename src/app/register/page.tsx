@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://vector-node-backend.onrender.com/api'
+
 export default function RegisterPage() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -48,7 +50,8 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      console.log('[REGISTER] Sending POST to:', `${API_URL}/auth/register`)
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
