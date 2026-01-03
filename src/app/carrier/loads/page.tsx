@@ -30,6 +30,17 @@ interface Shipment {
   };
 }
 
+// Traduzioni italiano
+const CARGO_TYPES_IT: Record<string, string> = {
+  'GENERAL': 'Generale',
+  'FRAGILE': 'Fragile',
+  'PERISHABLE': 'Deperibile',
+  'REFRIGERATED': 'Refrigerato',
+  'HAZMAT': 'Pericoloso (ADR)',
+  'HEAVY': 'Pesante',
+  'OVERSIZED': 'Fuori sagoma'
+};
+
 export default function BrowseLoadsPage() {
   const [loads, setLoads] = useState<Shipment[]>([]);
   const [filteredLoads, setFilteredLoads] = useState<Shipment[]>([]);
@@ -55,7 +66,7 @@ export default function BrowseLoadsPage() {
   });
 
   const cargoTypes = ['GENERAL', 'FRAGILE', 'PERISHABLE', 'REFRIGERATED', 'HAZMAT', 'HEAVY', 'OVERSIZED'];
-  const countries = ['Albania', 'Kosovo', 'Italy', 'Germany', 'Greece', 'North Macedonia', 'Montenegro', 'Serbia', 'Croatia', 'Slovenia', 'Austria', 'Switzerland', 'France', 'Belgium', 'Netherlands'];
+  const countries = ['Albania', 'Kosovo', 'Italia', 'Germania', 'Grecia', 'Macedonia del Nord', 'Montenegro', 'Serbia', 'Croazia', 'Slovenia', 'Austria', 'Svizzera', 'Francia', 'Belgio', 'Paesi Bassi'];
 
   useEffect(() => {
     fetchLoads();
@@ -127,13 +138,13 @@ export default function BrowseLoadsPage() {
 
   const handleBid = async () => {
     if (!selectedLoad || !bidAmount || !bidPickupDate || !bidDeliveryDate) {
-      setBidError('Please fill in price, pickup date, and delivery date');
+      setBidError('Inserisci prezzo, data ritiro e data consegna');
       return;
     }
 
     // Validate dates
     if (new Date(bidPickupDate) > new Date(bidDeliveryDate)) {
-      setBidError('Pickup date must be before or equal to delivery date');
+      setBidError('La data di ritiro deve essere prima o uguale alla data di consegna');
       return;
     }
 
@@ -174,11 +185,11 @@ export default function BrowseLoadsPage() {
           setBidSuccess(false);
         }, 2000);
       } else {
-        setBidError(data.error || data.message || 'Failed to place bid');
+        setBidError(data.error || data.message || 'Errore durante l\'invio dell\'offerta');
       }
     } catch (error) {
       console.error('Error placing bid:', error);
-      setBidError('Network error. Please try again.');
+      setBidError('Errore di rete. Riprova più tardi.');
     } finally {
       setSubmitting(false);
     }
@@ -200,6 +211,10 @@ export default function BrowseLoadsPage() {
     });
   };
 
+  const getCargoTypeLabel = (type: string) => {
+    return CARGO_TYPES_IT[type] || type;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -212,31 +227,31 @@ export default function BrowseLoadsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Browse Loads</h1>
-        <p className="text-gray-600">Find and bid on available shipments</p>
+        <h1 className="text-2xl font-bold text-gray-900">Cerca Carichi</h1>
+        <p className="text-gray-600">Trova e fai offerte sulle spedizioni disponibili</p>
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Filtri</h2>
           <button
             onClick={resetFilters}
             className="text-sm text-blue-600 hover:text-blue-700"
           >
-            Reset Filters
+            Resetta Filtri
           </button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Pickup Country</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Paese Ritiro</label>
             <select
               value={filters.pickupCountry}
               onChange={(e) => setFilters({ ...filters, pickupCountry: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
-              <option value="">All</option>
+              <option value="">Tutti</option>
               {countries.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -244,13 +259,13 @@ export default function BrowseLoadsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Delivery Country</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Paese Consegna</label>
             <select
               value={filters.deliveryCountry}
               onChange={(e) => setFilters({ ...filters, deliveryCountry: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
-              <option value="">All</option>
+              <option value="">Tutti</option>
               {countries.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -258,21 +273,21 @@ export default function BrowseLoadsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Cargo Type</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Tipo Merce</label>
             <select
               value={filters.cargoType}
               onChange={(e) => setFilters({ ...filters, cargoType: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
-              <option value="">All</option>
+              <option value="">Tutti</option>
               {cargoTypes.map(t => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>{getCargoTypeLabel(t)}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Min Weight (kg)</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Peso Min (kg)</label>
             <input
               type="number"
               value={filters.minWeight}
@@ -283,27 +298,27 @@ export default function BrowseLoadsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Max Weight (kg)</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Peso Max (kg)</label>
             <input
               type="number"
               value={filters.maxWeight}
               onChange={(e) => setFilters({ ...filters, maxWeight: e.target.value })}
-              placeholder="Any"
+              placeholder="Qualsiasi"
               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Ordina Per</label>
             <select
               value={filters.sortBy}
               onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="weight-asc">Weight: Low to High</option>
-              <option value="weight-desc">Weight: High to Low</option>
+              <option value="newest">Più Recenti</option>
+              <option value="oldest">Meno Recenti</option>
+              <option value="weight-asc">Peso: Crescente</option>
+              <option value="weight-desc">Peso: Decrescente</option>
             </select>
           </div>
         </div>
@@ -312,7 +327,7 @@ export default function BrowseLoadsPage() {
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <p className="text-gray-600">
-          Showing <span className="font-semibold">{filteredLoads.length}</span> available loads
+          Visualizzando <span className="font-semibold">{filteredLoads.length}</span> carichi disponibili
         </p>
       </div>
 
@@ -322,8 +337,8 @@ export default function BrowseLoadsPage() {
           <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
-          <h3 className="text-lg font-semibold text-gray-700">No loads found</h3>
-          <p className="text-gray-500 mt-2">Try adjusting your filters or check back later</p>
+          <h3 className="text-lg font-semibold text-gray-700">Nessun carico trovato</h3>
+          <p className="text-gray-500 mt-2">Prova a modificare i filtri o ricontrolla più tardi</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -339,14 +354,14 @@ export default function BrowseLoadsPage() {
                     load.cargoType === 'HEAVY' ? 'bg-purple-100 text-purple-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {load.cargoType}
+                    {getCargoTypeLabel(load.cargoType)}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {new Date(load.createdAt).toLocaleDateString()}
+                    {new Date(load.createdAt).toLocaleDateString('it-IT')}
                   </span>
                 </div>
                 <h3 className="font-semibold text-gray-900 line-clamp-1">
-                  {load.cargoDescription || 'Cargo Shipment'}
+                  {load.cargoDescription || 'Spedizione Merce'}
                 </h3>
               </div>
 
@@ -379,15 +394,15 @@ export default function BrowseLoadsPage() {
                 {/* Details */}
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                   <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">Weight</p>
+                    <p className="text-xs text-gray-500">Peso</p>
                     <p className="font-semibold text-sm">{load.weight} kg</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">Quantity</p>
-                    <p className="font-semibold text-sm">{load.quantity} pcs</p>
+                    <p className="text-xs text-gray-500">Quantità</p>
+                    <p className="font-semibold text-sm">{load.quantity} pz</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-xs text-gray-500">Bids</p>
+                    <p className="text-xs text-gray-500">Offerte</p>
                     <p className="font-semibold text-sm">{load.bids?.length || 0}</p>
                   </div>
                 </div>
@@ -395,7 +410,7 @@ export default function BrowseLoadsPage() {
                 {/* Min Bid */}
                 {getMinBid(load) && (
                   <div className="mt-3 p-2 bg-green-50 rounded-lg">
-                    <p className="text-xs text-green-700">Current lowest bid</p>
+                    <p className="text-xs text-green-700">Offerta più bassa attuale</p>
                     <p className="text-lg font-bold text-green-600">€{getMinBid(load)}</p>
                   </div>
                 )}
@@ -422,7 +437,7 @@ export default function BrowseLoadsPage() {
                   }}
                   className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
-                  Make Offer
+                  Fai Offerta
                 </button>
               </div>
             </div>
@@ -437,7 +452,7 @@ export default function BrowseLoadsPage() {
             {/* Modal Header */}
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Make an Offer</h2>
+                <h2 className="text-xl font-bold text-gray-900">Fai un&apos;Offerta</h2>
                 <button
                   onClick={() => setShowBidModal(false)}
                   className="p-2 hover:bg-gray-100 rounded-full"
@@ -458,12 +473,12 @@ export default function BrowseLoadsPage() {
                 <span>{selectedLoad.deliveryCity}, {selectedLoad.deliveryCountry}</span>
               </div>
               <div className="mt-2 flex gap-4 text-sm">
-                <span className="text-gray-600">Weight: <strong>{selectedLoad.weight} kg</strong></span>
-                <span className="text-gray-600">Type: <strong>{selectedLoad.cargoType}</strong></span>
+                <span className="text-gray-600">Peso: <strong>{selectedLoad.weight} kg</strong></span>
+                <span className="text-gray-600">Tipo: <strong>{getCargoTypeLabel(selectedLoad.cargoType)}</strong></span>
               </div>
               {getMinBid(selectedLoad) && (
                 <p className="mt-2 text-sm text-green-600">
-                  Current lowest bid: <strong>€{getMinBid(selectedLoad)}</strong>
+                  Offerta più bassa attuale: <strong>€{getMinBid(selectedLoad)}</strong>
                 </p>
               )}
             </div>
@@ -477,8 +492,8 @@ export default function BrowseLoadsPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Offer Submitted!</h3>
-                  <p className="text-gray-600 mt-2">The shipper will review your offer.</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Offerta Inviata!</h3>
+                  <p className="text-gray-600 mt-2">Il mittente esaminerà la tua offerta.</p>
                 </div>
               ) : (
                 <>
@@ -491,7 +506,7 @@ export default function BrowseLoadsPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Your Price (EUR) *
+                        Prezzo (EUR) *
                       </label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
@@ -499,7 +514,7 @@ export default function BrowseLoadsPage() {
                           type="number"
                           value={bidAmount}
                           onChange={(e) => setBidAmount(e.target.value)}
-                          placeholder="Enter your price"
+                          placeholder="Inserisci il prezzo"
                           className="w-full pl-8 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg"
                           min="1"
                           step="0.01"
@@ -510,7 +525,7 @@ export default function BrowseLoadsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Pickup Date *
+                          Data Ritiro *
                         </label>
                         <input
                           type="date"
@@ -522,7 +537,7 @@ export default function BrowseLoadsPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Delivery Date *
+                          Data Consegna *
                         </label>
                         <input
                           type="date"
@@ -536,12 +551,12 @@ export default function BrowseLoadsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes (Optional)
+                        Note (Opzionale)
                       </label>
                       <textarea
                         value={bidNotes}
                         onChange={(e) => setBidNotes(e.target.value)}
-                        placeholder="Add any notes for the shipper..."
+                        placeholder="Aggiungi eventuali note per il mittente..."
                         className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
                         rows={3}
                       />
@@ -552,7 +567,7 @@ export default function BrowseLoadsPage() {
                       disabled={!bidAmount || !bidPickupDate || !bidDeliveryDate || submitting}
                       className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {submitting ? 'Submitting...' : 'Submit Offer'}
+                      {submitting ? 'Invio in corso...' : 'Invia Offerta'}
                     </button>
                   </div>
                 </>
