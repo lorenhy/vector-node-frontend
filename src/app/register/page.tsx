@@ -6,6 +6,18 @@ import Link from 'next/link'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://vector-node-backend.onrender.com/api'
 
+// Transport types for carriers
+const TRANSPORT_TYPES = [
+  { key: 'PARCELS', label: 'Colli / Pacchi', icon: '📦' },
+  { key: 'PALLETS', label: 'Pallets / Bancali', icon: '🧱' },
+  { key: 'VEHICLES', label: 'Veicoli / Auto', icon: '🚗' },
+  { key: 'REFRIGERATED', label: 'Refrigerato / Frigo', icon: '❄️' },
+  { key: 'HAZMAT', label: 'ADR / Pericoloso', icon: '☣️' },
+  { key: 'ANIMALS', label: 'Animali Vivi', icon: '🐄' },
+  { key: 'BULK', label: 'Rinfusa / Sfuso', icon: '🌾' },
+  { key: 'OVERSIZED', label: 'Fuori Sagoma', icon: '📐' }
+] as const
+
 // Italian translations
 const TRANSLATIONS = {
   title: 'VectorNode',
@@ -21,6 +33,10 @@ const TRANSLATIONS = {
     PRIVATE: 'Privato',
     COMPANY: 'Azienda'
   },
+  // Transport types
+  transportTypesLabel: 'Che tipo di trasporto effettui?',
+  transportTypesRequired: 'Seleziona almeno un tipo di trasporto',
+  transportTypesHint: 'Riceverai solo carichi compatibili con i tuoi servizi',
   // Form labels
   firstName: 'Nome',
   lastName: 'Cognome',
@@ -63,8 +79,20 @@ export default function RegisterPage() {
     // Shipper-specific fields
     shipperType: 'PRIVATE' as 'PRIVATE' | 'COMPANY',
     companyName: '',
-    vatNumber: ''
+    vatNumber: '',
+    // Carrier-specific fields
+    transportTypes: [] as string[]
   })
+
+  // Toggle transport type selection
+  const toggleTransportType = (type: string) => {
+    setFormData(prev => ({
+      ...prev,
+      transportTypes: prev.transportTypes.includes(type)
+        ? prev.transportTypes.filter(t => t !== type)
+        : [...prev.transportTypes, type]
+    }))
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -94,6 +122,13 @@ export default function RegisterPage() {
       return
     }
 
+    // Validate carrier transport types
+    if (formData.role === 'CARRIER' && formData.transportTypes.length === 0) {
+      setError(TRANSLATIONS.transportTypesRequired)
+      setLoading(false)
+      return
+    }
+
     try {
       console.log('[REGISTER] Sending POST to:', `${API_URL}/auth/register`)
       const response = await fetch(`${API_URL}/auth/register`, {
@@ -110,7 +145,9 @@ export default function RegisterPage() {
           // Shipper-specific
           shipperType: formData.role === 'SHIPPER' ? formData.shipperType : undefined,
           companyName: formData.role === 'SHIPPER' && formData.shipperType === 'COMPANY' ? formData.companyName : undefined,
-          vatNumber: formData.role === 'SHIPPER' && formData.shipperType === 'COMPANY' ? formData.vatNumber : undefined
+          vatNumber: formData.role === 'SHIPPER' && formData.shipperType === 'COMPANY' ? formData.vatNumber : undefined,
+          // Carrier-specific
+          transportTypes: formData.role === 'CARRIER' ? formData.transportTypes : undefined
         }),
       })
 
@@ -181,6 +218,48 @@ export default function RegisterPage() {
               ))}
             </div>
           </div>
+
+          {/* Transport Type Selection (only for CARRIER) */}
+          {formData.role === 'CARRIER' && (
+            <div className="bg-blue-50 rounded-lg p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {TRANSLATIONS.transportTypesLabel}
+                </label>
+                <p className="text-xs text-gray-500 mb-3">{TRANSLATIONS.transportTypesHint}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {TRANSPORT_TYPES.map((type) => {
+                  const isSelected = formData.transportTypes.includes(type.key)
+                  return (
+                    <button
+                      key={type.key}
+                      type="button"
+                      onClick={() => toggleTransportType(type.key)}
+                      className={`py-3 px-3 rounded-lg text-sm font-medium transition-all border-2 flex items-center gap-2 ${
+                        isSelected
+                          ? 'border-blue-600 bg-blue-100 text-blue-700'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-lg">{type.icon}</span>
+                      <span className="text-xs">{type.label}</span>
+                      {isSelected && (
+                        <svg className="w-4 h-4 ml-auto text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {formData.transportTypes.length > 0 && (
+                <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                  Selezionati: {formData.transportTypes.length} tipi di trasporto
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Shipper Type Selection (only for SHIPPER) */}
           {formData.role === 'SHIPPER' && (
