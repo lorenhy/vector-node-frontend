@@ -6,6 +6,47 @@ import Link from 'next/link'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://vector-node-backend.onrender.com/api'
 
+// Italian translations
+const TRANSLATIONS = {
+  title: 'VectorNode',
+  subtitle: 'Crea il tuo account',
+  selectRole: 'Tipo di Account',
+  roles: {
+    SHIPPER: 'Mittente',
+    CARRIER: 'Trasportatore',
+    WAREHOUSE: 'Magazzino'
+  },
+  shipperType: 'Tipo di Mittente',
+  shipperTypes: {
+    PRIVATE: 'Privato',
+    COMPANY: 'Azienda'
+  },
+  // Form labels
+  firstName: 'Nome',
+  lastName: 'Cognome',
+  email: 'Email',
+  phone: 'Telefono (opzionale)',
+  password: 'Password (min 8 caratteri, maiuscola, minuscola, numero)',
+  confirmPassword: 'Conferma Password',
+  companyName: 'Ragione Sociale',
+  vatNumber: 'Partita IVA',
+  // Buttons
+  createAccount: 'Crea Account',
+  creating: 'Creazione in corso...',
+  // Links
+  alreadyHaveAccount: 'Hai già un account?',
+  signIn: 'Accedi',
+  // Errors
+  passwordMismatch: 'Le password non corrispondono',
+  passwordTooShort: 'La password deve essere di almeno 8 caratteri',
+  passwordRequirements: 'La password deve contenere maiuscola, minuscola e numero',
+  registrationFailed: 'Registrazione fallita',
+  loading: 'Caricamento...',
+  // ID Document notice
+  idNotice: 'Per i privati: dopo la registrazione dovrai caricare un documento d\'identità per poter creare spedizioni.',
+  companyNotice: 'Per le aziende: inserisci la Partita IVA per l\'attivazione immediata.'
+}
+
 export default function RegisterPage() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -18,7 +59,11 @@ export default function RegisterPage() {
     phone: '',
     password: '',
     confirmPassword: '',
-    role: 'SHIPPER' as 'SHIPPER' | 'CARRIER' | 'WAREHOUSE'
+    role: 'SHIPPER' as 'SHIPPER' | 'CARRIER' | 'WAREHOUSE',
+    // Shipper-specific fields
+    shipperType: 'PRIVATE' as 'PRIVATE' | 'COMPANY',
+    companyName: '',
+    vatNumber: ''
   })
 
   useEffect(() => {
@@ -31,20 +76,20 @@ export default function RegisterPage() {
     setLoading(true)
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      setError(TRANSLATIONS.passwordMismatch)
       setLoading(false)
       return
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(TRANSLATIONS.passwordTooShort)
       setLoading(false)
       return
     }
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/
     if (!passwordRegex.test(formData.password)) {
-      setError('Password must contain uppercase, lowercase, and number')
+      setError(TRANSLATIONS.passwordRequirements)
       setLoading(false)
       return
     }
@@ -61,14 +106,18 @@ export default function RegisterPage() {
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
-          role: formData.role
+          role: formData.role,
+          // Shipper-specific
+          shipperType: formData.role === 'SHIPPER' ? formData.shipperType : undefined,
+          companyName: formData.role === 'SHIPPER' && formData.shipperType === 'COMPANY' ? formData.companyName : undefined,
+          vatNumber: formData.role === 'SHIPPER' && formData.shipperType === 'COMPANY' ? formData.vatNumber : undefined
         }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Registration failed')
+        throw new Error(data.error || data.message || TRANSLATIONS.registrationFailed)
       }
 
       // Save token and user to localStorage
@@ -81,8 +130,9 @@ export default function RegisterPage() {
 
       router.push(`/${formData.role.toLowerCase()}`)
 
-    } catch (err: any) {
-      setError(err.message || 'Registration failed')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : TRANSLATIONS.registrationFailed
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -91,113 +141,187 @@ export default function RegisterPage() {
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">{TRANSLATIONS.loading}</div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">VectorNode</h2>
-          <p className="mt-2 text-sm text-gray-600">Create your account</p>
+          <h2 className="text-3xl font-bold text-gray-900">{TRANSLATIONS.title}</h2>
+          <p className="mt-2 text-sm text-gray-600">{TRANSLATIONS.subtitle}</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Role Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{TRANSLATIONS.selectRole}</label>
             <div className="grid grid-cols-3 gap-2">
               {(['SHIPPER', 'CARRIER', 'WAREHOUSE'] as const).map((role) => (
                 <button
                   key={role}
                   type="button"
                   onClick={() => setFormData({ ...formData, role })}
-                  className={`py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                     formData.role === role
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-blue-600 text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {role}
+                  {TRANSLATIONS.roles[role]}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Shipper Type Selection (only for SHIPPER) */}
+          {formData.role === 'SHIPPER' && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+              <label className="block text-sm font-medium text-gray-700">{TRANSLATIONS.shipperType}</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, shipperType: 'PRIVATE' })}
+                  className={`py-3 px-4 rounded-lg text-sm font-medium transition-all border-2 ${
+                    formData.shipperType === 'PRIVATE'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    {TRANSLATIONS.shipperTypes.PRIVATE}
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, shipperType: 'COMPANY' })}
+                  className={`py-3 px-4 rounded-lg text-sm font-medium transition-all border-2 ${
+                    formData.shipperType === 'COMPANY'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    {TRANSLATIONS.shipperTypes.COMPANY}
+                  </div>
+                </button>
+              </div>
+
+              {/* Notice based on type */}
+              <div className={`text-xs p-3 rounded-lg ${
+                formData.shipperType === 'PRIVATE'
+                  ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                  : 'bg-green-50 text-green-800 border border-green-200'
+              }`}>
+                {formData.shipperType === 'PRIVATE' ? TRANSLATIONS.idNotice : TRANSLATIONS.companyNotice}
+              </div>
+
+              {/* Company-specific fields */}
+              {formData.shipperType === 'COMPANY' && (
+                <div className="space-y-3 pt-2">
+                  <input
+                    required
+                    type="text"
+                    placeholder={TRANSLATIONS.companyName}
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <input
+                    required
+                    type="text"
+                    placeholder={TRANSLATIONS.vatNumber}
+                    value={formData.vatNumber}
+                    onChange={(e) => setFormData({ ...formData, vatNumber: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Name fields */}
           <div className="grid grid-cols-2 gap-4">
             <input
               required
               type="text"
-              placeholder="First Name"
+              placeholder={TRANSLATIONS.firstName}
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <input
               required
               type="text"
-              placeholder="Last Name"
+              placeholder={TRANSLATIONS.lastName}
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <input
             required
             type="email"
-            placeholder="Email"
+            placeholder={TRANSLATIONS.email}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
 
           <input
             type="tel"
-            placeholder="Phone (optional)"
+            placeholder={TRANSLATIONS.phone}
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
 
           <input
             required
             type="password"
-            placeholder="Password (min 8 chars, uppercase, lowercase, number)"
+            placeholder={TRANSLATIONS.password}
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
 
           <input
             required
             type="password"
-            placeholder="Confirm Password"
+            placeholder={TRANSLATIONS.confirmPassword}
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? TRANSLATIONS.creating : TRANSLATIONS.createAccount}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
+          {TRANSLATIONS.alreadyHaveAccount}{' '}
           <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            Sign in
+            {TRANSLATIONS.signIn}
           </Link>
         </p>
       </div>
