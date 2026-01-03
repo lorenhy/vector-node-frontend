@@ -17,18 +17,29 @@ const T = {
   createShipment: '+ Crea Nuova Spedizione',
   yourShipments: 'Le Tue Spedizioni',
   noShipments: 'Nessuna spedizione ancora. Crea la tua prima spedizione!',
-  cancelPublication: 'Annulla Pubblicazione',
+  cancelPublication: 'Annulla',
   cancelling: 'Annullamento...',
   cancelled: 'ANNULLATA',
-  viewBids: 'Vedi Offerte',
+  viewBids: 'Offerte',
   profile: 'Profilo',
   company: 'Azienda',
   private: 'Privato',
-  vatNumber: 'Partita IVA',
+  vatNumber: 'P.IVA',
   verified: 'Verificato',
   pending: 'In Attesa',
   logout: 'Esci',
-  loading: 'Caricamento...'
+  loading: 'Caricamento...',
+  shipment: 'Spedizione',
+  // Status translations
+  status: {
+    OPEN: 'APERTA',
+    BIDDING: 'IN OFFERTA',
+    ASSIGNED: 'ASSEGNATA',
+    IN_TRANSIT: 'IN TRANSITO',
+    DELIVERED: 'CONSEGNATA',
+    COMPLETED: 'COMPLETATA',
+    CANCELLED: 'ANNULLATA'
+  }
 };
 
 interface User {
@@ -320,19 +331,19 @@ export default function ShipperDashboard() {
             href="/shipper/shipments/new"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            + Create New Shipment
+            {T.createShipment}
           </Link>
         </div>
 
         {/* Shipments List */}
         <div className="bg-white rounded-lg shadow">
           <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold text-gray-900">Your Shipments</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{T.yourShipments}</h3>
           </div>
 
           {shipments.length === 0 ? (
             <div className="p-6 text-center text-gray-500">
-              <p>No shipments yet. Create your first shipment to get started!</p>
+              <p>{T.noShipments}</p>
             </div>
           ) : (
             <div className="divide-y">
@@ -341,7 +352,7 @@ export default function ShipperDashboard() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900">
-                        {shipment.cargoDescription || 'Shipment'}
+                        {shipment.cargoDescription || T.shipment}
                       </h4>
                       <p className="text-sm text-gray-500 mt-1">
                         {shipment.pickupCity}, {shipment.pickupCountry} → {shipment.deliveryCity}, {shipment.deliveryCountry}
@@ -351,9 +362,9 @@ export default function ShipperDashboard() {
                         {shipment.transportType && ` • ${shipment.transportType}`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                       {/* Status Badge */}
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         shipment.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                         shipment.status === 'DELIVERED' || shipment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                         shipment.status === 'IN_TRANSIT' ? 'bg-yellow-100 text-yellow-800' :
@@ -361,14 +372,14 @@ export default function ShipperDashboard() {
                         shipment.status === 'OPEN' || shipment.status === 'BIDDING' ? 'bg-purple-100 text-purple-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {shipment.status === 'CANCELLED' ? T.cancelled : shipment.status}
+                        {T.status[shipment.status as keyof typeof T.status] || shipment.status}
                       </span>
 
                       {/* Bids count for OPEN/BIDDING shipments */}
                       {(shipment.status === 'OPEN' || shipment.status === 'BIDDING') && shipment._count?.bids !== undefined && (
                         <Link
                           href={`/shipper/shipments/${shipment.id}/bids`}
-                          className="px-3 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-100"
+                          className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium hover:bg-blue-100"
                         >
                           {T.viewBids} ({shipment._count.bids})
                         </Link>
@@ -379,7 +390,7 @@ export default function ShipperDashboard() {
                         <button
                           onClick={() => handleCancelShipment(shipment.id)}
                           disabled={cancellingId === shipment.id}
-                          className={`px-3 py-1 rounded-md text-xs font-medium ${
+                          className={`px-2 py-1 rounded text-xs font-medium ${
                             cancellingId === shipment.id
                               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                               : 'bg-red-50 text-red-700 hover:bg-red-100'
