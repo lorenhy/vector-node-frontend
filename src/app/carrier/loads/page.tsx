@@ -37,6 +37,8 @@ export default function BrowseLoadsPage() {
   const [selectedLoad, setSelectedLoad] = useState<Shipment | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
   const [bidAmount, setBidAmount] = useState('');
+  const [bidPickupDate, setBidPickupDate] = useState('');
+  const [bidDeliveryDate, setBidDeliveryDate] = useState('');
   const [bidNotes, setBidNotes] = useState('');
   const [bidError, setBidError] = useState('');
   const [bidSuccess, setBidSuccess] = useState(false);
@@ -124,19 +126,22 @@ export default function BrowseLoadsPage() {
   };
 
   const handleBid = async () => {
-    if (!selectedLoad || !bidAmount) return;
+    if (!selectedLoad || !bidAmount || !bidPickupDate || !bidDeliveryDate) {
+      setBidError('Please fill in price, pickup date, and delivery date');
+      return;
+    }
+
+    // Validate dates
+    if (new Date(bidPickupDate) > new Date(bidDeliveryDate)) {
+      setBidError('Pickup date must be before or equal to delivery date');
+      return;
+    }
 
     const token = localStorage.getItem('token');
     if (!token) return;
 
     setSubmitting(true);
     setBidError('');
-
-    const estimatedPickup = new Date();
-    estimatedPickup.setDate(estimatedPickup.getDate() + 1);
-
-    const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 3);
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bids`, {
@@ -148,8 +153,8 @@ export default function BrowseLoadsPage() {
         body: JSON.stringify({
           shipmentId: selectedLoad.id,
           totalPrice: parseFloat(bidAmount),
-          estimatedPickup: estimatedPickup.toISOString(),
-          estimatedDelivery: estimatedDelivery.toISOString(),
+          pickupDate: new Date(bidPickupDate).toISOString(),
+          deliveryDate: new Date(bidDeliveryDate).toISOString(),
           vehicleType: 'TRUCK',
           notes: bidNotes
         })
@@ -160,6 +165,8 @@ export default function BrowseLoadsPage() {
       if (response.ok) {
         setBidSuccess(true);
         setBidAmount('');
+        setBidPickupDate('');
+        setBidDeliveryDate('');
         setBidNotes('');
         fetchLoads();
         setTimeout(() => {
@@ -500,6 +507,33 @@ export default function BrowseLoadsPage() {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Pickup Date *
+                        </label>
+                        <input
+                          type="date"
+                          value={bidPickupDate}
+                          onChange={(e) => setBidPickupDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Delivery Date *
+                        </label>
+                        <input
+                          type="date"
+                          value={bidDeliveryDate}
+                          onChange={(e) => setBidDeliveryDate(e.target.value)}
+                          min={bidPickupDate || new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Notes (Optional)
@@ -515,7 +549,7 @@ export default function BrowseLoadsPage() {
 
                     <button
                       onClick={handleBid}
-                      disabled={!bidAmount || submitting}
+                      disabled={!bidAmount || !bidPickupDate || !bidDeliveryDate || submitting}
                       className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {submitting ? 'Submitting...' : 'Submit Offer'}
